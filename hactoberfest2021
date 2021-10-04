@@ -1,0 +1,65 @@
+import numpy as np
+import statistics
+
+
+def calculate_farthest(bkt, u, v):
+    far = v
+    inlist = False
+    for b in bkt:
+        if abs(b-mean[u]) > abs(far-mean[u]):
+            far = b
+            inlist = True
+    if inlist:
+        bkt[bkt.index(far)] = v
+        mean[u] = statistics.mean(bkt)
+    return far, inlist
+
+
+def buck_adj(buck, mean, valid):
+    meancopy = mean
+    for i in range(len(buck)):
+        for j in range(len(buck[i])):
+            mindist = np.where(np.absolute(mean-buck[i][j]) == np.min(np.absolute(mean-buck[i][j])[np.where(valid)]))[0][0]
+            if mindist != i:
+                far, inlist = calculate_farthest(buck[mindist], mindist, buck[i][j])
+                if inlist:
+                    buck[i][j] = far
+                    mean[i] = statistics.mean(buck[i])
+    if not (mean == meancopy).all():
+        buck_adj(buck, mean, valid)
+
+
+k = int(input("k: "))
+n = int(input("\nn: "))
+
+val = np.random.randint(int(input("Low: ")), int(input("High: ")), n)
+mean = np.zeros(int(np.ceil(n/k)), dtype=np.float)
+buck = [[] for i in range(int(np.ceil(n/k)))]
+valid = np.zeros(int(np.ceil(n/k)), dtype=np.int)
+valid[0] = 1
+
+for v in val:
+
+    meandist = np.absolute(mean - v)
+    m = np.where(meandist == np.min(meandist[np.where(valid)]))[0][0]
+    
+    if len(buck[m]) < k:
+        buck[m].append(v)
+        if len(buck[m]) == k:
+            mean[m] = statistics.mean(buck[m])
+
+    else:
+        far, inlist = calculate_farthest(buck[m], m, v)
+        bi = 0
+        for b in range(len(buck)):
+            if len(buck[b]) < k:
+                bi = b
+                break
+        buck[bi].append(far)
+        valid[bi] = 1
+        mean[bi] = statistics.mean(buck[bi])
+        buck_adj(buck, mean, valid)
+
+buck_adj(buck, mean, valid)
+
+print(buck)
